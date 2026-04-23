@@ -88,6 +88,11 @@ Search by name, cuisine filters, user-generated restaurant additions, push notif
 social sharing, rate limiting / abuse prevention, native mobile app, expansion beyond the
 4 Brooklyn neighborhoods. Do not implement these even if they seem like natural additions.
 
+## Git Workflow
+- **Start of session:** run `git pull` to get latest changes from collaborators
+- **End of session:** run `git push` to sync local changes to GitHub (triggers Vercel deploy)
+- Remind Tomas to do both at the start and end of each session.
+
 ## Milestones
 - **M1** — Project scaffold + DB migrations + seed data (expansion-aware schema)
 - **M2** — Full-screen map with colored pins (bbox API from day one)
