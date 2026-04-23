@@ -1,0 +1,250 @@
+# No Reservations — Product Spec v1.0
+
+**Status:** Pre-development  
+**Last updated:** March 2026  
+**Platform:** Desktop-first, mobile-ready web app
+
+---
+
+## 1. Vision
+
+No Reservations is a hyperlocal, community-powered map that helps people find restaurants they can walk into right now. It is built for the street-corner moment — you're hungry, you're out, and you don't want to spend ten minutes figuring out where you can actually get a table.
+
+The app launches in a tight Brooklyn neighborhood cluster and grows outward as community data fills in.
+
+---
+
+## 2. The Problem
+
+No existing app surfaces walk-in availability as a primary filter. Yelp, Google Maps, and OpenTable all optimize for reservations. Finding a walk-in restaurant currently means opening multiple apps, checking each restaurant individually, and guessing. No Reservations solves this in one glance.
+
+---
+
+## 3. Target User
+
+Someone standing on a street corner who wants to eat in the next 30–60 minutes and doesn't have a reservation. They are comfortable on their phone, familiar with the neighborhood, and want a fast, confident answer — not a research session.
+
+---
+
+## 4. MVP Geography
+
+**Center point:** Barclays Center, Brooklyn  
+**Coverage area:** Park Slope, Boerum Hill, Fort Greene, Prospect Heights  
+**Seed restaurant count:** ~200–400 restaurants (manually researched at launch)
+
+Users outside this area see a graceful empty state (see Section 10).
+
+---
+
+## 5. Platform
+
+- **MVP:** Desktop web (browser)
+- **Design approach:** Mobile-ready from day one — no hover-only interactions, large touch targets, responsive layout
+- **Future:** Progressive Web App (PWA) or React Native mobile app
+
+---
+
+## 6. Tech Stack (Recommended)
+
+| Layer | Choice | Rationale |
+|---|---|---|
+| Frontend | React | Component reuse, easy PWA path later |
+| Backend | Node / Express | Lightweight API layer |
+| Database | PostgreSQL | Relational, handles geo queries well |
+| Maps | Google Maps JS API | Industry standard, Essentials SKU free tier |
+| Restaurant seed data | Manual research + Yelp Fusion API | Yelp free tier, no per-query cost at seed time |
+| Auth | Magic link (email, no password) | Low friction for street-corner use case |
+| Analytics | PostHog (free tier) | Easy custom event tracking |
+| Hosting | Vercel (frontend) + Railway (backend) | Fast to deploy, generous free tiers |
+
+---
+
+## 7. Data Model
+
+### Restaurant record
+- Name
+- Address + coordinates
+- Cuisine type
+- Google Place ID (for hours lookup)
+- Hours (stored per day, sourced at seed time from manual research or Yelp API)
+- Is open now (derived from hours — displayed on card as text, filter deferred to post-MVP)
+- Walk-in status (see Section 8)
+- Is open now (derived from hours)
+- Confirmation count
+- Last confirmed date
+- Flagged as stale (auto-set after 90 days with no confirmation)
+- Optional notes (crowdsourced, free text, 140 char max)
+
+### User record
+- Email
+- Display name (optional)
+- Total confirmation count
+- Member since date
+
+### Confirmation record
+- User ID
+- Restaurant ID
+- Status submitted
+- Optional note
+- Timestamp
+
+---
+
+## 8. Walk-In Status Flags
+
+Restaurants are categorized with one of three active statuses:
+
+| Status | Label | Pin color |
+|---|---|---|
+| Walk-in only | "Walk-in only" | Green |
+| Bar seating available | "Bar seating available" | Yellow |
+| Reservations for large parties only | "Walk-in for 1–4" | Orange |
+
+A fourth map state exists for **completeness only** — restaurants known to require reservations are shown as grey, de-emphasized pins with no interactive card. They exist so the map looks complete, not sparse. Tapping a grey pin shows a single message: *"This place requires reservations — not what you're looking for right now."*
+
+---
+
+## 9. Core Screens
+
+### 9.1 Map View (Primary)
+- Full-screen map centered on Barclays Center on first load
+- Colored pins for each walk-in restaurant
+- Grey de-emphasized pins for reservations-required restaurants
+- Toggle in top-right corner: **Map / List**
+- User location dot (with permission)
+- "Open now" filter toggle (post-MVP)
+
+### 9.2 Restaurant Card (on pin tap)
+Bottom sheet slides up with:
+- Restaurant name
+- Cuisine type
+- Walk-in status badge
+- Distance from user location
+- Open / Closed status (with closing time if open)
+- Hours today (e.g. "Open until 11pm" or "Closed — opens at 5pm") displayed as simple text
+- Confirmation count + last confirmed date
+- Staleness indicator if > 90 days since last confirmation
+- Two action buttons: **"Still walk-in ✓"** and **"This changed ✗"**
+
+### 9.3 Confirmation Flow
+**"Still walk-in ✓"** — one tap, done. Resets the 90-day staleness clock. Requires user to be logged in (prompts magic link if not).
+
+**"This changed ✗"** — opens a re-categorization selector:
+- Walk-in only
+- Bar seating available
+- Reservations for large parties only
+- Now requires reservations (removes from active map, adds grey pin)
+
+After either action, an optional text field appears: *"Anything we should know?"* (140 char max). This feedback routes to the founder's admin dashboard.
+
+### 9.4 List View (Toggle)
+- Same restaurants, sorted by distance
+- Same status badges and last-confirmed indicators
+- Faster to scan than the map for some users
+
+### 9.5 User Profile
+- Display name
+- Total confirmations submitted
+- Member since date
+- Simple leaderboard position (future: neighborhood leaderboard)
+
+---
+
+## 10. Empty State
+
+If a user's location (or manual map navigation) is outside the covered area:
+
+- Map shows a shaded overlay on the uncovered region
+- Banner at top: *"No Reservations is live in Park Slope, Boerum Hill, Fort Greene & Prospect Heights"*
+- Button: **"Take me there"** — snaps the map viewport back to the covered area
+- Secondary text: *"Want us in your neighborhood? Let us know."* with a simple email capture
+
+---
+
+## 11. Data Strategy
+
+### Phase 1 — Manual seed (pre-launch)
+Founder manually researches all ~200–400 restaurants in the coverage area. Check each restaurant's website and Google listing for OpenTable/Resy presence. Record walk-in status, cuisine, and hours. This is the quality baseline.
+
+### Phase 2 — Yelp API supplement
+Use Yelp Fusion API (free tier) to fill in missing cuisine types, phone numbers, and hours data. Do not use Yelp reservation data as ground truth — use it as a starting signal only.
+
+### Phase 3 — Crowdsourced confirmations
+Users confirm or update status via the confirmation flow. Each confirmation resets the 90-day staleness clock. Enough "This changed ✗" submissions (threshold TBD, suggested: 3) triggers an automatic status review flag in the admin dashboard.
+
+### Data freshness
+- **Green:** Confirmed within 90 days
+- **Stale:** No confirmation in 90+ days — card shows *"Last confirmed [date] — has anything changed?"* with a nudge to confirm
+
+---
+
+## 12. Analytics
+
+### Tool
+PostHog (free tier) for session and event tracking.
+
+### Custom events to instrument from day one
+- App opened → log viewport neighborhood
+- Pin tapped → log restaurant ID + current status
+- Card viewed → log restaurant ID + time spent
+- "Still walk-in" submitted → log restaurant ID
+- "This changed" submitted → log restaurant ID + new status
+- Optional note submitted → log restaurant ID (not content)
+- Empty state shown → log user coordinates (for expansion prioritization)
+- "Take me there" button tapped
+
+This data tells you: which restaurants are most viewed, where demand exists outside your coverage area, and how healthy your confirmation rate is.
+
+---
+
+## 13. Auth
+
+Magic link only (no password). User enters email → receives a login link → tapped link logs them in and sets a session cookie. Required only to submit confirmations. Browsing the map is always public and unauthenticated.
+
+---
+
+## 14. Gamification (Phase 1)
+
+- Confirmation count displayed on user profile
+- Confirmation count shown on restaurant cards (*"47 people confirmed this"*)
+- Future: neighborhood leaderboard, badges for milestone confirmation counts
+
+---
+
+## 15. Out of Scope for MVP
+
+The following are explicitly deferred to keep the MVP focused:
+
+- Search by restaurant name
+- Filters by cuisine type
+- User-generated restaurant additions
+- Push notifications
+- Social sharing
+- Rate limiting / abuse prevention
+- Native mobile app
+- Expansion beyond the four-neighborhood cluster
+
+---
+
+## 16. Launch Strategy
+
+Target channels for initial user acquisition:
+- Local Brooklyn food Instagram accounts
+- Nextdoor (Park Slope, Fort Greene, Prospect Heights groups)
+- Neighborhood Facebook groups
+- Barclays Center event nights (natural street-corner use case)
+
+Founder personally verifies seed data quality before any public announcement.
+
+---
+
+## 17. Decisions Log
+
+- **Status change review threshold:** 1 "This changed ✗" flag triggers a review in the admin dashboard. No automatic status change — founder reviews and confirms.
+- **"Open now" filter:** Deferred to post-MVP. Not shown in v1 UI.
+- **Grey pins (reservations-required):** Hidden by default. User can toggle on via a map control labeled "Show reservations-required."
+- **Admin dashboard:** Email digest. Each "This changed ✗" flag triggers a real-time email to the founder with restaurant name, new status submitted, and optional user note.
+
+---
+
+*This spec was drafted as the foundation for Claude Code development. Feed this document into Claude Code plan mode before writing any code.*

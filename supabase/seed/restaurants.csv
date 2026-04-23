@@ -1,0 +1,2 @@
+name,address,lat,lng,cuisine_type,google_place_id,walk_in_status,hours_mon_open,hours_mon_close,hours_tue_open,hours_tue_close,hours_wed_open,hours_wed_close,hours_thu_open,hours_thu_close,hours_fri_open,hours_fri_close,hours_sat_open,hours_sat_close,hours_sun_open,hours_sun_close,notes
+Example Restaurant,123 Flatbush Ave Brooklyn NY 11217,40.6782,-73.9442,Italian,ChIJexample123,walk_in_only,17:00,23:00,17:00,23:00,17:00,23:00,17:00,23:00,17:00,00:00,12:00,00:00,12:00,22:00,Great for groups

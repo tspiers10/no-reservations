@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Ensure the map fills the full viewport without overflow */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Google Maps container resets */
+.gm-style {
+  font-family: inherit;
+}
+
+/* Bottom sheet transition */
+.bottom-sheet-enter {
+  transform: translateY(100%);
+}
+.bottom-sheet-enter-active {
+  transform: translateY(0);
+  transition: transform 250ms ease-out;
+}
+.bottom-sheet-exit-active {
+  transform: translateY(100%);
+  transition: transform 200ms ease-in;
+}
