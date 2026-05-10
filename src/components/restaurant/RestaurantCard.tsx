@@ -213,15 +213,24 @@ export function RestaurantCard({ restaurant, onClose, onSignInRequired, onConfir
             </div>
 
             {/* Right: photo */}
-            {localRestaurant.photo_url && (
-              <div className="w-36 h-36 rounded-xl overflow-hidden shadow-sm flex-shrink-0">
-                <img
-                  src={localRestaurant.photo_url}
-                  alt={localRestaurant.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
+            {localRestaurant.photo_url && (() => {
+              let src = localRestaurant.photo_url;
+              try {
+                const u = new URL(src);
+                const ref = u.searchParams.get("photo_reference");
+                if (ref) src = `/api/photos?ref=${encodeURIComponent(ref)}`;
+              } catch {}
+              return (
+                <div className="w-36 h-36 rounded-xl overflow-hidden shadow-sm flex-shrink-0">
+                  <img
+                    src={src}
+                    alt={localRestaurant.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = "none"; }}
+                  />
+                </div>
+              );
+            })()}
           </div>
 
           {/* Community tip summary */}
