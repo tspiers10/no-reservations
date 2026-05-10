@@ -89,6 +89,7 @@ export type RestaurantMapPin = Pick<
   | "hours"
   | "address"
   | "neighborhood_id"
+  | "google_place_id"
   | "photo_url"
   | "tip_summary"
 >;
